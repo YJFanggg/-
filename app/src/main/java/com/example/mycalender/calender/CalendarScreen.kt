@@ -3,95 +3,95 @@ package com.example.mycalender.calender
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.kizitonwose.calendar.compose.HorizontalCalendar
+import com.kizitonwose.calendar.compose.VerticalCalendar
 import com.kizitonwose.calendar.compose.rememberCalendarState
+import com.kizitonwose.calendar.core.atStartOfMonth
+import com.kizitonwose.calendar.core.daysOfWeek
+import com.kizitonwose.calendar.core.yearMonth
+import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 
-// 模擬數據類型，用於取代 LiveData
-data class Reminder(
-    val title: String,
-    val date: String,
-    val time: String,
-    val note: String? = null
-)
 
-// 假設的靜態提醒數據
-val remindersList = listOf(
-    Reminder("Meeting", "2024-12-25", "10:00", "Christmas meeting"),
-    Reminder("Workout", "2024-12-25", "18:00", "Gym session"),
-    Reminder("Doctor", "2024-12-26", "15:00", "Regular checkup")
-)
-
+//month title
 @Composable
-fun CalendarScreen() {
-    // 設定日曆的月份範圍
+fun CalenderScreen(viewModel: CalendarViewModel){
     val currentMonth = YearMonth.now()
     val startMonth = currentMonth.minusMonths(12)
     val endMonth = currentMonth.plusMonths(12)
 
-    // 初始化日曆狀態
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val eventsForSelectedDate by viewModel.eventsForSelectedDate.collectAsState()
+
     val state = rememberCalendarState(
         startMonth = startMonth,
         endMonth = endMonth,
         firstVisibleMonth = currentMonth
     )
-
-    Column(modifier = Modifier.padding(16.dp)) {
-        // 日曆顯示
+    Column {
         HorizontalCalendar(
             state = state,
             dayContent = { day ->
-                DayCell(day.date, remindersList) // 傳遞靜態提醒列表
+                DayCell(day.date){
+                    viewModel.onDateSelected(day.date)
+                }
             },
             monthHeader = { month ->
                 MonthHeader(month.yearMonth)
+            },
+            monthContainer = { month,content ->
+                Column(modifier = Modifier.padding(8.dp)) {
+                    Text(
+                        text = "Month: ${month.yearMonth}",
+                        style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.padding(8.dp)
+                    )
+                    content()
+                }
             }
         )
-
-        // 顯示所有提醒列表
         Text(
-            text = "所有提醒:",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(top = 16.dp, bottom = 8.dp)
+            text = "Events for ${selectedDate}:",
+            style = MaterialTheme.typography.titleLarge
         )
-        remindersList.forEach { reminder ->
-            Text(
-                text = "${reminder.title} - ${reminder.date} ${reminder.time}",
-                style = MaterialTheme.typography.bodyLarge,
-                modifier = Modifier.padding(8.dp)
-            )
+
+        LazyColumn {
+            items(eventsForSelectedDate) { event ->
+                Text(text = event.title)
+            }
         }
     }
+
 }
 
 @Composable
-fun DayCell(date: LocalDate, reminders: List<Reminder>) {
-    val reminderForDay = reminders.filter { it.date == date.toString() } // 篩選當天提醒
-    Column(modifier = Modifier.padding(8.dp)) {
-        Text(text = date.dayOfMonth.toString()) // 日期
-        reminderForDay.forEach { reminder ->
-            Text(
-                text = reminder.title,
-                style = MaterialTheme.typography.bodySmall,
-                modifier = Modifier.padding(start = 8.dp)
-            )
-        }
-    }
+fun DayCell(date: LocalDate,onClick: () -> Unit) {
+    Text(
+        text = date.dayOfMonth.toString(),
+        modifier = Modifier
+            .padding(8.dp)
+            .clickable (onClick = onClick)
+    )
 }
 
 @Composable
 fun MonthHeader(yearMonth: YearMonth) {
     Text(
-        text = "Header for: ${yearMonth}",
+        text = "${yearMonth}",
         style = MaterialTheme.typography.titleMedium,
         modifier = Modifier
             .padding(16.dp)
-            .clickable {}
+
+
     )
 }

@@ -11,13 +11,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.mycalender.data.Event
 import java.time.LocalDate
 import java.time.LocalTime
 
 @Composable
 fun AddEventScreen(
     onEventAdded: () -> Unit,
-    onCancel: () -> Unit = {}
+    onCancel: () -> Unit = {},
+    addEventToDatabase: (Event) -> Unit
 ) {
     val context = LocalContext.current
 
@@ -25,7 +27,8 @@ fun AddEventScreen(
     var eventName by remember { mutableStateOf("") }
     var eventNote by remember { mutableStateOf("") }
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
-    var selectedTime by remember { mutableStateOf(LocalTime.now()) }
+    var startTime by remember { mutableStateOf(LocalTime.now()) }
+    var endTime by remember { mutableStateOf(LocalTime.now().plusHours(1)) }
 
     // 日期選擇器
     val datePickerDialog = DatePickerDialog(
@@ -38,14 +41,25 @@ fun AddEventScreen(
         selectedDate.dayOfMonth
     )
 
-    // 時間選擇器
-    val timePickerDialog = TimePickerDialog(
+    // 開始時間選擇器
+    val startTimePickerDialog = TimePickerDialog(
         context,
         { _, hourOfDay, minute ->
-            selectedTime = LocalTime.of(hourOfDay, minute)
+            startTime = LocalTime.of(hourOfDay, minute)
         },
-        selectedTime.hour,
-        selectedTime.minute,
+        startTime.hour,
+        startTime.minute,
+        true
+    )
+
+    // 結束時間選擇器
+    val endTimePickerDialog = TimePickerDialog(
+        context,
+        { _, hourOfDay, minute ->
+            endTime = LocalTime.of(hourOfDay, minute)
+        },
+        endTime.hour,
+        endTime.minute,
         true
     )
 
@@ -92,12 +106,22 @@ fun AddEventScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // 時間選擇
+        // 開始時間選擇
         Button(
-            onClick = { timePickerDialog.show() },
+            onClick = { startTimePickerDialog.show() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "選擇時間：${selectedTime}")
+            Text(text = "開始時間：${startTime}")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // 結束時間選擇
+        Button(
+            onClick = { endTimePickerDialog.show() },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(text = "結束時間：${endTime}")
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -113,9 +137,23 @@ fun AddEventScreen(
             Spacer(modifier = Modifier.width(16.dp))
             Button(
                 onClick = {
-                    // 儲存行程（可在此整合資料庫邏輯）
-                    Toast.makeText(context, "行程已新增", Toast.LENGTH_SHORT).show()
-                    onEventAdded()
+                    if (eventName.isBlank()) {
+                        Toast.makeText(context, "行程名稱不能為空", Toast.LENGTH_SHORT).show()
+                    } else if (endTime <= startTime) {
+                        Toast.makeText(context, "結束時間必須晚於開始時間", Toast.LENGTH_SHORT).show()
+                    } else {
+                        // 新增行程到資料庫
+                        val newEvent = Event(
+                            title = eventName,
+                            note = eventNote,
+                            date = selectedDate,
+                            startTime = startTime,
+                            endTime = endTime
+                        )
+                        addEventToDatabase(newEvent)
+                        Toast.makeText(context, "行程已新增", Toast.LENGTH_SHORT).show()
+                        onEventAdded()
+                    }
                 },
                 modifier = Modifier.weight(1f)
             ) {
@@ -126,8 +164,8 @@ fun AddEventScreen(
 }
 
 
+
 @Preview(showBackground = true)
 @Composable
 fun AddEventScreenPreview() {
-    AddEventScreen(onEventAdded = {})
 }

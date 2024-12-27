@@ -1,38 +1,51 @@
 package com.example.mycalender.calender
 
-import android.app.Application
-import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.LiveData
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import kotlinx.coroutines.Dispatchers
+import com.example.mycalender.data.Event
+import com.example.mycalender.data.EventRepository
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 
-class CalendarViewModel(application: Application) : AndroidViewModel(application) {
+class CalendarViewModel(private val repository: EventRepository) : ViewModel() {
 
-    // 獲取 ReminderDao 實例
-    private val reminderDao: ReminderDao = AppDatabase.getInstance(application).reminderDao()
+    private val _selectedDate = MutableStateFlow(LocalDate.now())
+    val selectedDate: StateFlow<LocalDate> = _selectedDate
 
-    // LiveData 用於觀察所有提醒數據
-    val allReminders: LiveData<List<Reminder>> = reminderDao.getAllReminders()
+    private val _eventsForSelectedDate = MutableStateFlow<List<Event>>(emptyList())
+    val eventsForSelectedDate: StateFlow<List<Event>> = _eventsForSelectedDate
 
-    // 插入提醒
-    fun insertReminder(reminder: Reminder) {
-        viewModelScope.launch(Dispatchers.IO) {
-            reminderDao.insertReminder(reminder)
+    init {
+        loadEventsForDate(LocalDate.now())
+    }
+
+    fun onDateSelected(date: LocalDate) {
+        _selectedDate.value = date
+        loadEventsForDate(date)
+    }
+
+    private fun loadEventsForDate(date: LocalDate) {
+        viewModelScope.launch {
+            repository.getEventsByDate(date).collect { events ->
+                _eventsForSelectedDate.value = events
+            }
         }
     }
 
-    // 更新提醒
-    fun updateReminder(reminder: Reminder) {
-        viewModelScope.launch(Dispatchers.IO) {
-            reminderDao.updateReminder(reminder)
+    fun addEvent(event: Event) {
+        viewModelScope.launch {
+            repository.insertEvent(event)
+            loadEventsForDate(_selectedDate.value)
         }
     }
 
-    // 刪除提醒
-    fun deleteReminder(reminder: Reminder) {
-        viewModelScope.launch(Dispatchers.IO) {
-            reminderDao.deleteReminder(reminder)
+    fun deleteEvent(event: Event) {
+        viewModelScope.launch {
+            repository.deleteEvent(event)
+            loadEventsForDate(_selectedDate.value)
         }
     }
 }
