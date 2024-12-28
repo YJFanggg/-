@@ -14,6 +14,8 @@ import androidx.compose.ui.unit.dp
 import com.example.mycalender.data.Event
 import java.time.LocalDate
 import java.time.LocalTime
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun AddEventScreen(
@@ -29,6 +31,9 @@ fun AddEventScreen(
     var selectedDate by remember { mutableStateOf(LocalDate.now()) }
     var startTime by remember { mutableStateOf(LocalTime.now()) }
     var endTime by remember { mutableStateOf(LocalTime.now().plusHours(1)) }
+
+    val dateFormatter = DateTimeFormatter.ofPattern("MMM dd, yyyy", Locale.ENGLISH)
+    val timeFormatter = DateTimeFormatter.ofPattern("hh:mm a", Locale.ENGLISH)
 
     // 日期選擇器
     val datePickerDialog = DatePickerDialog(
@@ -49,7 +54,7 @@ fun AddEventScreen(
         },
         startTime.hour,
         startTime.minute,
-        true
+        false
     )
 
     // 結束時間選擇器
@@ -60,7 +65,7 @@ fun AddEventScreen(
         },
         endTime.hour,
         endTime.minute,
-        true
+        false
     )
 
     Column(
@@ -71,7 +76,7 @@ fun AddEventScreen(
     ) {
         // 標題
         Text(
-            text = "新增行程",
+            text = "Add Event",
             style = MaterialTheme.typography.titleLarge,
             modifier = Modifier.padding(bottom = 16.dp)
         )
@@ -80,7 +85,7 @@ fun AddEventScreen(
         OutlinedTextField(
             value = eventName,
             onValueChange = { eventName = it },
-            label = { Text("行程名稱") },
+            label = { Text("Event Name") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -90,7 +95,7 @@ fun AddEventScreen(
         OutlinedTextField(
             value = eventNote,
             onValueChange = { eventNote = it },
-            label = { Text("行程備註") },
+            label = { Text("Event Note") },
             modifier = Modifier.fillMaxWidth()
         )
 
@@ -101,7 +106,7 @@ fun AddEventScreen(
             onClick = { datePickerDialog.show() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "選擇日期：${selectedDate}")
+            Text(text = "Select Date: ${selectedDate.format(dateFormatter)}")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -111,7 +116,7 @@ fun AddEventScreen(
             onClick = { startTimePickerDialog.show() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "開始時間：${startTime}")
+            Text(text = "Start Time: ${startTime.format(timeFormatter)}")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -121,7 +126,7 @@ fun AddEventScreen(
             onClick = { endTimePickerDialog.show() },
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(text = "結束時間：${endTime}")
+            Text(text = "End Time: ${endTime.format(timeFormatter)}")
         }
 
         Spacer(modifier = Modifier.height(32.dp))
@@ -132,15 +137,15 @@ fun AddEventScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Button(onClick = onCancel, modifier = Modifier.weight(1f)) {
-                Text(text = "取消")
+                Text(text = "Cancel")
             }
             Spacer(modifier = Modifier.width(16.dp))
             Button(
                 onClick = {
                     if (eventName.isBlank()) {
-                        Toast.makeText(context, "行程名稱不能為空", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Event name cannot be empty", Toast.LENGTH_SHORT).show()
                     } else if (endTime <= startTime) {
-                        Toast.makeText(context, "結束時間必須晚於開始時間", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "End time must be later than start time", Toast.LENGTH_SHORT).show()
                     } else {
                         // 新增行程到資料庫
                         val newEvent = Event(
@@ -151,21 +156,23 @@ fun AddEventScreen(
                             endTime = endTime
                         )
                         addEventToDatabase(newEvent)
-                        Toast.makeText(context, "行程已新增", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(context, "Event added successfully", Toast.LENGTH_SHORT).show()
                         onEventAdded()
                     }
                 },
                 modifier = Modifier.weight(1f)
             ) {
-                Text(text = "完成")
+                Text(text = "Submit")
             }
         }
     }
 }
 
-
-
 @Preview(showBackground = true)
 @Composable
 fun AddEventScreenPreview() {
+    AddEventScreen(
+        onEventAdded = {},
+        addEventToDatabase = {}
+    )
 }

@@ -1,3 +1,4 @@
+// CalendarViewModel.kt
 package com.example.mycalender.calender
 
 import androidx.lifecycle.ViewModel
@@ -9,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import java.time.LocalDate
+import java.time.YearMonth
 
 class CalendarViewModel(private val repository: EventRepository) : ViewModel() {
 
@@ -18,6 +20,9 @@ class CalendarViewModel(private val repository: EventRepository) : ViewModel() {
     private val _eventsForSelectedDate = MutableStateFlow<List<Event>>(emptyList())
     val eventsForSelectedDate: StateFlow<List<Event>> = _eventsForSelectedDate
 
+    private val _currentMonthYear = MutableStateFlow(YearMonth.now())
+    val currentMonthYear: StateFlow<YearMonth> = _currentMonthYear
+
     init {
         loadEventsForDate(LocalDate.now())
     }
@@ -25,6 +30,10 @@ class CalendarViewModel(private val repository: EventRepository) : ViewModel() {
     fun onDateSelected(date: LocalDate) {
         _selectedDate.value = date
         loadEventsForDate(date)
+    }
+
+    fun onMonthChanged(yearMonth: YearMonth) {
+        _currentMonthYear.value = yearMonth
     }
 
     private fun loadEventsForDate(date: LocalDate) {

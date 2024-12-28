@@ -28,6 +28,8 @@ import com.example.mycalender.calender.CalenderScreen
 import com.example.mycalender.data.AppDatabase
 import com.example.mycalender.data.EventRepository
 import com.example.mycalender.ui.theme.MyCalenderTheme
+import java.time.format.TextStyle
+import java.util.*
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -73,6 +75,10 @@ fun MainActivityContent(viewModel: CalendarViewModel) {
 
 @Composable
 fun CustomizedCalendarScreen(viewModel: CalendarViewModel) {
+    val currentMonthYear by viewModel.currentMonthYear.collectAsState()
+    val selectedDate by viewModel.selectedDate.collectAsState()
+    val eventsForSelectedDate by viewModel.eventsForSelectedDate.collectAsState()
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -104,7 +110,7 @@ fun CustomizedCalendarScreen(viewModel: CalendarViewModel) {
             )
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp)) // Increased spacing between header and calendar section
 
         // Calendar Section
         Box(
@@ -112,7 +118,7 @@ fun CustomizedCalendarScreen(viewModel: CalendarViewModel) {
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.White)
-                .padding(16.dp)
+                .padding(16.dp) // Adjusted padding for uniform spacing
         ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 // Calendar Content
@@ -120,7 +126,7 @@ fun CustomizedCalendarScreen(viewModel: CalendarViewModel) {
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(32.dp)) // Increased spacing between calendar and events section
 
         // Events Section
         Box(
@@ -128,21 +134,34 @@ fun CustomizedCalendarScreen(viewModel: CalendarViewModel) {
                 .fillMaxWidth()
                 .clip(RoundedCornerShape(16.dp))
                 .background(Color.White)
-                .padding(16.dp)
+                .padding(16.dp) // Adjusted padding for uniform spacing
         ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.Start
+            ) {
                 Text(
-                    text = "Events for 2024-12-26:",
+                    text = "Events for $selectedDate:",
                     fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.Gray,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
-                Text(
-                    text = "No events available.",
-                    fontSize = 16.sp,
-                    color = Color.Gray
-                )
+                if (eventsForSelectedDate.isEmpty()) {
+                    Text(
+                        text = "No itinerary planned today",
+                        fontSize = 16.sp,
+                        color = Color.Gray
+                    )
+                } else {
+                    eventsForSelectedDate.forEach { event ->
+                        Text(
+                            text = event.title,
+                            fontSize = 16.sp,
+                            color = Color.Gray
+                        )
+                    }
+                }
             }
         }
     }
